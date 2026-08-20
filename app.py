@@ -99,21 +99,39 @@ try:
         snapshot_date = available_dates[selected_val]
         st.subheader(f"Snapshot Analysis Date: {snapshot_date.strftime('%Y-%m-%d')}")
 
+        # === UPDATED SECTION: DYNAMIC BOUNDS CALCULATION ===
+        all_x_vals = []
+        all_y_vals = []
+        for ticker in tickers:
+            t_date_range = available_dates[selected_val - tail + 1 : selected_val + 1]
+            all_x_vals.extend(rsr_dict[ticker].loc[t_date_range].values)
+            all_y_vals.extend(rsm_dict[ticker].loc[t_date_range].values)
+
+        # Set bounds around current data clusters with padding margin
+        x_min, x_max = min(all_x_vals) - 0.4, max(all_x_vals) + 0.4
+        y_min, y_max = min(all_y_vals) - 0.4, max(all_y_vals) + 0.4
+
+        # Enforce minimum canvas span width so crosshairs stay visible 
+        x_min = min(x_min, 98.8)
+        x_max = max(x_max, 101.2)
+        y_min = min(y_min, 98.8)
+        y_max = max(y_max, 101.2)
+
         fig = go.Figure()
 
-        # Visual Quadrant background layouts
-        fig.add_vrect(x0=90, x1=100, y0=90, y1=100, fillcolor="red", opacity=0.06, layer="below", line_width=0)
-        fig.add_vrect(x0=100, x1=110, y0=90, y1=100, fillcolor="yellow", opacity=0.06, layer="below", line_width=0)
-        fig.add_vrect(x0=100, x1=110, y0=100, y1=110, fillcolor="green", opacity=0.06, layer="below", line_width=0)
-        fig.add_vrect(x0=90, x1=100, y0=100, y1=110, fillcolor="blue", opacity=0.06, layer="below", line_width=0)
+        # Responsive visual background quadrant configurations
+        fig.add_vrect(x0=x_min, x1=100, y0=y_min, y1=100, fillcolor="red", opacity=0.04, layer="below", line_width=0)
+        fig.add_vrect(x0=100, x1=x_max, y0=y_min, y1=100, fillcolor="yellow", opacity=0.04, layer="below", line_width=0)
+        fig.add_vrect(x0=100, x1=x_max, y0=100, y1=y_max, fillcolor="green", opacity=0.04, layer="below", line_width=0)
+        fig.add_vrect(x0=x_min, x1=100, y0=100, y1=y_max, fillcolor="blue", opacity=0.04, layer="below", line_width=0)
 
-        # Origin gridlines crossing at (100,100)
+        # Origin axis crosshairs crossing at (100,100)
         fig.add_hline(y=100, line_dash="dash", line_color="black", opacity=0.4)
         fig.add_vline(x=100, line_dash="dash", line_color="black", opacity=0.4)
 
         table_data = []
 
-        # Iterate components layout values
+        # Process and render graph trace objects
         for ticker in tickers:
             t_date_range = available_dates[selected_val - tail + 1 : selected_val + 1]
             
@@ -131,17 +149,16 @@ try:
                 "Quadrant": status
             })
 
-            # Calculate curved vector spline path lengths
             lx, ly = get_line_points(x_trail, y_trail)
 
-            # Draw tail lines
+            # Draw tail vectors
             fig.add_trace(go.Scatter(
                 x=lx, y=ly, mode='lines',
                 line=dict(width=2), name=ticker,
                 showlegend=False, hoverinfo='skip'
             ))
 
-            # Draw marker bubbles
+            # Draw target endpoint nodes
             fig.add_trace(go.Scatter(
                 x=[current_x], y=[current_y],
                 mode='markers+text',
@@ -151,25 +168,25 @@ try:
                 hovertemplate=f"<b>{ticker}</b><br>RS Ratio: {current_x:.2f}<br>RS Momentum: {current_y:.2f}<br>Status: {status}<extra></extra>"
             ))
 
-        # Graph configurations setup 
+        # Graph axis limits auto-adjusted using dynamic variables
         fig.update_layout(
             xaxis_title="JdK RS Ratio (Trend)",
             yaxis_title="JdK RS Momentum (Velocity)",
-            xaxis=dict(range=[90, 110]),  # Fixed empty range bug
-            yaxis=dict(range=[90, 110]),  # Fixed empty range bug
+            xaxis=dict(range=[x_min, x_max]),  
+            yaxis=dict(range=[y_min, y_max]),  
             width=850, height=600,
             margin=dict(l=30, r=30, t=30, b=30),
             hovermode='closest'
         )
 
-        # Static label overlays
-        fig.add_annotation(x=94, y=106, text="<b>IMPROVING</b>", showarrow=False, font=dict(color="blue", size=13))
-        fig.add_annotation(x=106, y=106, text="<b>LEADING</b>", showarrow=False, font=dict(color="green", size=13))
-        fig.add_annotation(x=106, y=94, text="<b>WEAKENING</b>", showarrow=False, font=dict(color="orange", size=13))
-        fig.add_annotation(x=94, y=94, text="<b>LAGGING</b>", showarrow=False, font=dict(color="red", size=13))
+        # Dynamic label positioning inside corners
+        fig.add_annotation(x=x_min + 0.2, y=y_max - 0.2, text="<b>IMPROVING</b>", showarrow=False, font=dict(color="blue", size=13))
+        fig.add_annotation(x=x_max - 0.2, y=y_max - 0.2, text="<b>LEADING</b>", showarrow=False, font=dict(color="green", size=13))
+        fig.add_annotation(x=x_max - 0.2, y=y_min + 0.2, text="<b>WEAKENING</b>", showarrow=False, font=dict(color="orange", size=13))
+        fig.add_annotation(x=x_min + 0.2, y=y_min + 0.2, text="<b>LAGGING</b>", showarrow=False, font=dict(color="red", size=13))
 
         # Split dashboard layouts side-by-side
-        col1, col2 = st.columns(2)  # Fixed: Added positional integer '2'
+        col1, col2 = st.columns(2)  
         with col1:
             st.plotly_chart(fig, use_container_width=True)
         with col2:
