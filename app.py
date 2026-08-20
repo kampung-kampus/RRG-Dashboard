@@ -145,12 +145,12 @@ try:
                 hovertemplate=f"<b>{ticker}</b><br>RS Ratio: {current_x:.2f}<br>RS Momentum: {current_y:.2f}<br>Status: {status}<extra></extra>"
             ))
 
-        # Adjust layout parameters
+       # Adjust layout parameters
         fig.update_layout(
             xaxis_title="JdK RS Ratio (Trend)",
             yaxis_title="JdK RS Momentum (Velocity)",
-            xaxis=dict(range=[94, 106]),
-            yaxis=dict(range=[94, 106]),
+            xaxis=dict(range=[90, 110]),  # Fixed: Added numerical ranges
+            yaxis=dict(range=[90, 110]),  # Fixed: Added numerical ranges
             width=900,
             height=650,
             margin=dict(l=40, r=40, t=40, b=40),
