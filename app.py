@@ -42,7 +42,6 @@ def get_status(x, y):
 @st.cache_data(ttl=3600)  
 def load_data(tickers_list, bench, prd):
     all_tickers = tickers_list + [bench]
-    # Set auto_adjust=False explicitly to keep 'Adj Close' column available
     raw_data = yf.download(all_tickers, period=prd, interval="1wk", auto_adjust=False)
     
     # Isolate the 'Adj Close' slice to get a flat, clean DataFrame per ticker
@@ -156,8 +155,8 @@ try:
         fig.update_layout(
             xaxis_title="JdK RS Ratio (Trend)",
             yaxis_title="JdK RS Momentum (Velocity)",
-            xaxis=dict(range=[93, 107]),
-            yaxis=dict(range=[93, 107]),
+            xaxis=dict(range=[90, 110]),  # Fixed empty range bug
+            yaxis=dict(range=[90, 110]),  # Fixed empty range bug
             width=850, height=600,
             margin=dict(l=30, r=30, t=30, b=30),
             hovermode='closest'
@@ -170,7 +169,7 @@ try:
         fig.add_annotation(x=94, y=94, text="<b>LAGGING</b>", showarrow=False, font=dict(color="red", size=13))
 
         # Split dashboard layouts side-by-side
-        col1, col2 = st.columns()
+        col1, col2 = st.columns(2)  # Fixed: Added positional integer '2'
         with col1:
             st.plotly_chart(fig, use_container_width=True)
         with col2:
